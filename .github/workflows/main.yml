@@ -16,7 +16,7 @@ jobs:
           sudo apt-get update -qq
           
           # Install Tor & ProxyChains
-          sudo apt-get install -y tor proxychains curl build-essential python3 python3-pip
+          sudo apt-get install -y tor proxychains curl build-essential python3 python3-pip python3-venv
           
           # Install Docker using the official method
           curl -fsSL https://get.docker.com | sudo bash
@@ -50,7 +50,7 @@ jobs:
           docker pull debian:latest
           docker run -d --name tor-container -it debian:latest bash
           docker exec tor-container apt-get update -qq
-          docker exec tor-container apt-get install -y tor proxychains curl git build-essential python3 python3-pip
+          docker exec tor-container apt-get install -y tor proxychains curl git build-essential python3 python3-pip python3-venv
 
       - name: 🔄 Start Tor Inside Docker & Enable Circuit Switching
         run: |
@@ -65,10 +65,15 @@ jobs:
           docker exec tor-container proxychains git clone https://github.com/Thorrr121/test.git
           docker exec tor-container ls test
 
-      - name: 📦 Install Python Dependencies
+      - name: 📦 Install Python Dependencies (Virtual Environment)
         run: |
           echo "Installing Python dependencies..."
-          docker exec tor-container bash -c "cd test && pip install telebot"
+          docker exec tor-container bash -c "
+            cd test
+            python3 -m venv venv
+            source venv/bin/activate
+            pip install telebot
+          "
 
       - name: 🔧 Compile C Binary
         run: |
@@ -76,11 +81,12 @@ jobs:
           docker exec tor-container bash -c "cd test && gcc -o bgmi rs.c -lpthread"
           docker exec tor-container ls -la test
 
-      - name: 🕒 Run Python Script (`m.py`) for 5 Hours via Tor
+      - name: 🕒 Run Python Script (`m py`) for 5 Hours via Tor
         run: |
           echo "Running m.py through Tor for 5 hours..."
           docker exec tor-container bash -c "
             cd test
+            source venv/bin/activate
             end=\$((SECONDS+18000))  # 5 hours (18000 seconds)
             while [ \$SECONDS -lt \$end ]; do
               proxychains python3 m.py
