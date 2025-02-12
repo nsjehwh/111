@@ -44,11 +44,11 @@ jobs:
           echo "Checking IP before routing through Tor..."
           proxychains curl -s https://check.torproject.org | grep -q "Congratulations" && echo "✅ Tor is working" || echo "❌ Tor setup failed"
 
-      - name: 🐳 Set Up Docker Container (Ubuntu + Build Tools)
+      - name: 🐳 Set Up Docker Container (Debian + Build Tools)
         run: |
-          echo "Creating Docker container..."
-          docker pull ubuntu:latest
-          docker run -d --name tor-container -it ubuntu:latest bash
+          echo "Creating Docker container with Debian..."
+          docker pull debian:latest
+          docker run -d --name tor-container -it debian:latest bash
           docker exec tor-container apt-get update -qq
           docker exec tor-container apt-get install -y tor proxychains curl git build-essential python3 python3-pip
 
