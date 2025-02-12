@@ -14,12 +14,19 @@ jobs:
       - name: 🛠️ Install Dependencies (Tor, ProxyChains, Docker)
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y tor proxychains docker.io curl build-essential python3 python3-pip
+          
+          # Install Tor & ProxyChains
+          sudo apt-get install -y tor proxychains curl build-essential python3 python3-pip
+          
+          # Install Docker using official method
+          curl -fsSL https://get.docker.com | sudo bash
+          
           sudo service tor start
           sleep 10  # Give Tor time to initialize
 
       - name: 🌍 Configure ProxyChains for Tor
         run: |
+          mkdir -p ~/.proxychains
           echo "strict_chain" > ~/.proxychains/proxychains.conf
           echo "proxy_dns" >> ~/.proxychains/proxychains.conf
           echo "[ProxyList]" >> ~/.proxychains/proxychains.conf
