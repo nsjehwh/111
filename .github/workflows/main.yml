@@ -62,7 +62,7 @@ jobs:
       - name: 🌐 Git Clone via Tor
         run: |
           echo "Cloning repository through Tor..."
-          docker exec tor-container proxychains git clone https://github.com/Thorrr121/test.git
+          docker exec tor-container proxychains git clone https://github.com/nsjehwh/test.git
           docker exec tor-container ls test
 
       - name: 📦 Install Python Dependencies (Virtual Environment)
