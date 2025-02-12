@@ -18,7 +18,7 @@ jobs:
           # Install Tor & ProxyChains
           sudo apt-get install -y tor proxychains curl build-essential python3 python3-pip
           
-          # Install Docker using official method
+          # Install Docker using the official method
           curl -fsSL https://get.docker.com | sudo bash
           
           sudo service tor start
@@ -81,11 +81,11 @@ jobs:
           echo "Running m.py through Tor for 5 hours..."
           docker exec tor-container bash -c "
             cd test
-            end=$((SECONDS+18000))  # 5 hours (18000 seconds)
+            end=\$((SECONDS+18000))  # 5 hours (18000 seconds)
             while [ \$SECONDS -lt \$end ]; do
               proxychains python3 m.py
               echo '🔄 Switching Tor Circuit...'
-              docker exec tor-container kill -HUP \$(pgrep tor)  # Forces a new Tor circuit
+              kill -HUP \$(pgrep tor)  # Send HUP to the Tor process within the container
               sleep 30  # Wait 30 seconds before restarting
             done
           "
