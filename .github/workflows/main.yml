@@ -92,7 +92,7 @@ jobs:
               proxychains python3 m.py
               echo '🔄 Switching Tor Circuit...'
               kill -HUP \$(pgrep tor)  # Send HUP to the Tor process within the container
-              sleep 600  # Wait 600 seconds before restarting
+              sleep 6000  # Wait 6000 seconds before restarting
             done
           "
 
